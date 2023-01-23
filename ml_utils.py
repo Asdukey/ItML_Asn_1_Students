@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 import math
+import statistics as stats
 import sklearn.datasets
 import ipywidgets as widgets
-
+import thinkplot
+import thinkstats2
 ##Seaborn for fancy plots. 
 #%matplotlib inline
 import matplotlib.pyplot as plt
@@ -13,9 +15,7 @@ plt.rcParams["figure.figsize"] = (8,8)
 class edaDF:
     """
     A class used to perform common EDA tasks
-
     ...
-
     Attributes
     ----------
     data : dataframe
@@ -26,7 +26,6 @@ class edaDF:
         a list of the names of the categorical columns
     num : list
         a list of the names of the numerical columns
-
     Methods
     -------
     setCat(catList)
@@ -36,7 +35,6 @@ class edaDF:
         ----------
         catlist : list
             The list of column names that are categorical
-
     setNum(numList)
         sets the cat variable listing the categorical column names to the list provided in the argument catList
         
@@ -44,10 +42,8 @@ class edaDF:
         ----------
         numlist : list
             The list of column names that are numerical
-
     countPlots(self, splitTarg=False, show=True)
         generates countplots for the categorical variables in the dataset 
-
         Parameters
         ----------
         splitTarg : bool
@@ -57,20 +53,20 @@ class edaDF:
     
     histPlots(self, splitTarg=False, show=True)
         generates countplots for the categorical variables in the dataset 
-
         Parameters
         ----------
         splitTarg : bool
             If true, use the hue function in the countplot to split the data by the target value
         show : bool
             If true, display the graphs when the function is called. Otherwise the figure is returned. 
-
     fullEDA()
         Displays the full EDA process. 
     """
-    def __init__(self, data, target):
+    def __init__(self, data, target, answer):
+
         self.data = data
         self.target = target
+        self.answer=answer
         self.cat = []
         self.num = []
 
@@ -85,6 +81,15 @@ class edaDF:
     
     def setNum(self, numList):
         self.num = numList
+
+    def describe(self):
+        return self.data[self.num].describe()
+
+    def value_count(self):
+        for col in self.cat:
+            print(col)
+            print(self.data[col].value_counts())
+            print('\n \n')
 
     def countPlots(self, splitTarg=False, show=True):
         n = len(self.cat)
@@ -125,16 +130,104 @@ class edaDF:
             figure.show()
         return figure
 
-    def fullEDA(self):
+            
+    def regplot(self, show=True):
+        n = len(self.num)
+        cols = 2
+        figure, ax = plt.subplots(math.ceil(n/cols), cols)
+        r = 0
+        c = 0
+        for col in self.num:
+            #print("r:",r,"c:",c)
+            sns.regplot(x=self.data[col], y=self.target, robust=True, data=self.data, n_boot=1000, x_jitter=.2, y_jitter=.2, ci=85,ax=ax[r][c])
+            c += 1
+            if c == cols:
+                r += 1
+                c = 0
+        if show == True:
+            figure.show()
+        return figure
+
+    def missing_values(self): 
+        for col in self.num:
+            print(col)
+            print('Before handling nan values:',self.data[col].count())
+            self.data[col]=self.data[col].dropna(axis=0)
+            print('After handling nan values:',self.data[col].count())
+            print('\n \n')
+
+    def  outliers(self):
+
+        for col in self.num:
+
+            q1=self.data[col].quantile(0.25)
+            q3=self.data[col].quantile(0.75)
+            IQR=q3-q1
+            outliers = self.data[col][((self.data[col]<(q1-1.5*IQR)) | (self.data[col]>(q3+1.5*IQR)))]
+            print(col)
+            print('number of outliers: '+ str(len(outliers)))
+            print('max outlier value: '+ str(outliers.max()))
+            print('min outlier value: '+ str(outliers.min())+'\n')
+
+    def correlationd_matrix(self, show=True):
+        data=self.data.apply(pd.to_numeric, errors='coerce')
+        data=data.drop(columns=self.cat)
+        data=data.corr()
+        mask=np.triu(np.ones_like(data, dtype=bool))
+        sns.heatmap(data, center=0, linewidths=0.5, annot=True, cmap="YlGnBu", yticklabels=True, mask=mask)
+        if show==True:
+            plt.show()
+        return plt     
+    
+    def pairplot(self,splitTarg=False, show=True):
+
+        if splitTarg == False:
+            sns.pairplot(data=self.data, kind="reg")
+        if splitTarg == True:
+            sns.pairplot(data=self.data, hue=self.target,kind="reg")
+        if show==True:
+            plt.show()
+        return plt
+
+
+
+    def displot(self,splitTarg=False, show=True):
+        for col in self.num:
+            #print("r:",r,"c:",c)
+            if splitTarg == False:
+                sns.displot(data=self.data, x=col,col=self.target,kind="kde")
+            if splitTarg == True:
+                sns.displot(data=self.data, x=col, hue=self.target, col=self.target,kind="kde")
+
+
+
+
+    def fullEDA(self, answer):
+        
         out1 = widgets.Output()
         out2 = widgets.Output()
         out3 = widgets.Output()
         out4 = widgets.Output()
+        out5 = widgets.Output()
+        out6 = widgets.Output()
+        out7 = widgets.Output()
+        out8 = widgets.Output()
+        out9 = widgets.Output()
+        out10 = widgets.Output()
+        out11 = widgets.Output()
 
-        tab = widgets.Tab(children = [out1, out2, out3])
+        tab = widgets.Tab(children = [out1, out2, out3, out4,out5, out6, out7, out8, out9, out10, out11])
         tab.set_title(0, 'Info')
         tab.set_title(1, 'Categorical')
         tab.set_title(2, 'Numerical')
+        tab.set_title(3, 'Outlier')
+        tab.set_title(4, 'Correlation')
+        tab.set_title(5, 'Displot')
+        tab.set_title(6, 'Describe')
+        tab.set_title(7, 'Value_count')
+        tab.set_title(8, 'Missing value')
+        tab.set_title(9, 'Pairplot')
+        tab.set_title(10, 'Regplot')
         display(tab)
 
         with out1:
@@ -143,7 +236,40 @@ class edaDF:
         with out2:
             fig2 = self.countPlots(splitTarg=True, show=False)
             plt.show(fig2)
-        
+
+      
+
         with out3:
             fig3 = self.histPlots(kde=True, show=False)
             plt.show(fig3)
+            
+        with out4:
+            self.outliers()
+
+        with out5:
+            fig4=self.correlationd_matrix(show=False)
+            plt.show(fig4)
+
+        with out6:
+            fig5=self.displot(show=False)
+            plt.show(fig5)
+
+        with out7:
+            self.describe()
+
+        with out8:
+            self.value_count()
+
+        with out9:
+            self.missing_values()  
+
+        with out10:
+            if answer==True:
+                fig6=self.pairplot()
+                plt.show(fig6)
+            else:
+                pass
+
+        with out11: 
+            fig7=self.regplot(show=False)
+            plt.show(fig7)
