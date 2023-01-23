@@ -1,11 +1,9 @@
 import pandas as pd
 import numpy as np
 import math
-import statistics as stats
 import sklearn.datasets
 import ipywidgets as widgets
-import thinkplot
-import thinkstats2
+
 ##Seaborn for fancy plots. 
 #%matplotlib inline
 import matplotlib.pyplot as plt
@@ -148,7 +146,7 @@ class edaDF:
             figure.show()
         return figure
 
-    def missing_values(self): 
+    def nan_values(self): 
         for col in self.num:
             print(col)
             print('Before handling nan values:',self.data[col].count())
@@ -225,7 +223,7 @@ class edaDF:
         tab.set_title(5, 'Displot')
         tab.set_title(6, 'Describe')
         tab.set_title(7, 'Value_count')
-        tab.set_title(8, 'Missing value')
+        tab.set_title(8, 'Nan_values')
         tab.set_title(9, 'Pairplot')
         tab.set_title(10, 'Regplot')
         display(tab)
@@ -261,7 +259,7 @@ class edaDF:
             self.value_count()
 
         with out9:
-            self.missing_values()  
+            self.nan_values()  
 
         with out10:
             if answer==True:
